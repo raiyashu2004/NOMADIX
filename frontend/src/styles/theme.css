@@ -1,0 +1,43 @@
+/* ===============================
+   LIGHT THEME
+================================= */
+
+:root {
+  /* Brand */
+  --color-primary: 15 76 129;        /* #0F4C81 */
+  --color-primary-hover: 11 58 99;   /* #0B3A63 */
+
+  --color-accent: 20 184 166;        /* #14B8A6 */
+  --color-accent-hover: 13 148 136;  /* #0D9488 */
+
+  /* Surfaces */
+  --color-bg: 248 250 252;           /* #F8FAFC */
+  --color-card: 255 255 255;         /* #FFFFFF */
+
+  /* Text */
+  --color-text: 15 23 42;            /* #0F172A */
+  --color-muted: 100 116 139;        /* #64748B */
+
+  /* Border */
+  --color-border: 226 232 240;       /* #E2E8F0 */
+}
+
+/* ===============================
+   DARK THEME
+================================= */
+
+.dark {
+  --color-primary: 56 189 248;       /* #38BDF8 */
+  --color-primary-hover: 14 116 144;
+
+  --color-accent: 20 184 166;
+  --color-accent-hover: 13 148 136;
+
+  --color-bg: 11 17 32;              /* #0B1120 */
+  --color-card: 17 24 39;            /* #111827 */
+
+  --color-text: 241 245 249;         /* #F1F5F9 */
+  --color-muted: 148 163 184;        /* #94A3B8 */
+
+  --color-border: 31 41 55;          /* #1F2937 */
+}
