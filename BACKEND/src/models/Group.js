@@ -26,6 +26,11 @@ const groupSchema = mongoose.Schema({
     currentLocation: {
         type: String,
         default: 'Not Started'
+    },
+    currentPhase: {
+        type: String,
+        enum: ['planning', 'survey', 'recommendations', 'voting', 'locked'],
+        default: 'planning'
     }
 }, {
     timestamps: true
