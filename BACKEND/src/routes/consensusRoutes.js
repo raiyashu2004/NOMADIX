@@ -17,8 +17,8 @@ const consensusLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-router.use(protect);
 router.use(consensusLimiter);
+router.use(protect);
 
 router.route('/survey').post(submitSurvey).get(getSurveyStatus);
 router.route('/recommendations/generate').post(generateRecommendations);
