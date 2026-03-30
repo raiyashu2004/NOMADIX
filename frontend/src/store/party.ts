@@ -1,136 +1,103 @@
-import { create } from "zustand"
+import { create } from 'zustand'
+import { createGroupApi, joinGroupApi, getMyGroupsApi } from '../api/groups'
+import { joinGroupRoom } from '../socket'
 
-/* =========================
-   Types
-========================= */
-
-type Member = {
-  id: string
+export type GroupMember = {
+  _id: string
   name: string
+  email: string
 }
 
-type VoteOption = {
-  id: string
-  label: string
-}
-
-type VoteEntry = {
-  optionId: string
-  weight?: number
-}
-
-type Vote = {
-  id: string
-  type: string
-  options: VoteOption[]
-  votes: VoteEntry[]
-}
-
-type Journey = {
-  status: "not_started" | "in_progress" | "completed"
-}
-
-type Party = {
-  id: string
+export type Group = {
+  _id: string
   name: string
-  status: "planning" | "active"
-  members: Member[]
+  leader: GroupMember | string
+  members: GroupMember[]
+  inviteCode: string
+  currentPhase: 'planning' | 'survey' | 'recommendations' | 'voting' | 'locked'
 }
 
 type PartyStore = {
-  party: Party | null
-  votes: Vote[]
-  journey: Journey | null
-
-  createParty: (name: string) => void
-  joinParty: (id: string, inviteCode: string) => void
-  addMember: (name: string) => void
-  listVotes: () => void
-  startJourney: () => void
+  currentGroup: Group | null
+  myGroups: Group[]
+  loading: boolean
+  error: string | null
+  createGroup: (name: string) => Promise<void>
+  joinGroup: (inviteCode: string) => Promise<void>
+  loadMyGroups: () => Promise<void>
+  selectGroup: (group: Group) => void
+  updateGroupPhase: (phase: Group['currentPhase']) => void
+  clearError: () => void
 }
 
-/* =========================
-   Store
-========================= */
+export const usePartyStore = create<PartyStore>((set, get) => ({
+  currentGroup: null,
+  myGroups: [],
+  loading: false,
+  error: null,
 
-export const usePartyStore = create<PartyStore>((set) => ({
-  party: null,
-  votes: [],
-  journey: null,
+  createGroup: async (name) => {
+    set({ loading: true, error: null })
+    try {
+      const res = await createGroupApi(name)
+      const group: Group = res.data.data
+      set((state) => ({
+        currentGroup: group,
+        myGroups: [group, ...state.myGroups],
+        loading: false,
+      }))
+      joinGroupRoom(group._id)
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create group'
+      set({ error: msg, loading: false })
+      throw new Error(msg)
+    }
+  },
 
-  createParty: (name) =>
-    set({
-      party: {
-        id: Date.now().toString(),
-        name,
-        status: "planning",
-        members: [],
-      },
-      votes: [],
-      journey: null,
-    }),
+  joinGroup: async (inviteCode) => {
+    set({ loading: true, error: null })
+    try {
+      const res = await joinGroupApi(inviteCode)
+      const group: Group = res.data.data
+      set((state) => ({
+        currentGroup: group,
+        myGroups: state.myGroups.some(g => g._id === group._id)
+          ? state.myGroups
+          : [group, ...state.myGroups],
+        loading: false,
+      }))
+      joinGroupRoom(group._id)
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to join group'
+      set({ error: msg, loading: false })
+      throw new Error(msg)
+    }
+  },
 
-joinParty: (id) =>
-  set({
-    party: {
-      id,
-      name: "Joined Party",
-      status: "planning",
-      members: [],
-    },
-    votes: [],        // <-- ADD THIS
-    journey: null,    // <-- ADD THIS
-  }),
+  loadMyGroups: async () => {
+    set({ loading: true, error: null })
+    try {
+      const res = await getMyGroupsApi()
+      const groups: Group[] = res.data.data.groups
+      set({ myGroups: groups, loading: false })
+      groups.forEach(g => joinGroupRoom(g._id))
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to load groups'
+      set({ error: msg, loading: false })
+    }
+  },
 
-  addMember: (name) =>
-    set((state) => ({
-      party: state.party
-        ? {
-            ...state.party,
-            members: [
-              ...state.party.members,
-              { id: Date.now().toString(), name },
-            ],
-          }
-        : null,
-    })),
+  selectGroup: (group) => {
+    set({ currentGroup: group })
+    joinGroupRoom(group._id)
+  },
 
-  listVotes: () =>
-    set({
-      votes: [
-        {
-          id: "v1",
-          type: "Restaurant",
-          options: [
-            { id: "o1", label: "Italian" },
-            { id: "o2", label: "Chinese" },
-          ],
-          votes: [
-            { optionId: "o1" },
-            { optionId: "o1" },
-            { optionId: "o2" },
-          ],
-        },
-        {
-          id: "v2",
-          type: "Transport",
-          options: [
-            { id: "o3", label: "Bus" },
-            { id: "o4", label: "Train" },
-          ],
-          votes: [
-            { optionId: "o4" },
-            { optionId: "o4" },
-          ],
-        },
-      ],
-    }),
+  updateGroupPhase: (phase) => {
+    const { currentGroup } = get()
+    if (currentGroup) {
+      set({ currentGroup: { ...currentGroup, currentPhase: phase } })
+    }
+  },
 
-  startJourney: () =>
-    set((state) => ({
-      party: state.party
-        ? { ...state.party, status: "active" }
-        : null,
-      journey: { status: "in_progress" },
-    })),
+  clearError: () => set({ error: null }),
 }))
