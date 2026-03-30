@@ -139,7 +139,9 @@ export const useConsensusStore = create<ConsensusStore>((set) => ({
       const res = await getVotesApi(groupId)
       const { voteCounts, myVote } = res.data.data
       set({ voteCounts, myVote: myVote ? myVote.toString() : null, loading: false })
-    } catch {
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      if (msg) console.warn('[loadVotes]', msg)
       set({ loading: false })
     }
   },
