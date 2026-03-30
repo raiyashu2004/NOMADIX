@@ -100,6 +100,84 @@ const setupJourneySocket = (io) => {
             }
         });
 
+        // ── join_group_room ───────────────────────────────────────────────────
+        /**
+         * Group-specific room handler for the consensus feature.
+         * Validates Group membership (not Party) before admitting the socket.
+         *
+         * emit:  join_group_room  →  { groupId }
+         * ack:   group_room_joined → { groupId, memberCount }
+         * err:   error            → { message }
+         */
+        socket.on('join_group_room', async ({ groupId } = {}, callback) => {
+            const ack = typeof callback === 'function' ? callback : () => {};
+            try {
+                if (!groupId) {
+                    return ack({ success: false, message: 'groupId is required' });
+                }
+
+                const group = await Group.findById(groupId).select('name members currentPhase');
+                if (!group) {
+                    return ack({ success: false, message: 'Group not found' });
+                }
+
+                const isMember = group.members.some((m) => m.equals(userId));
+                if (!isMember) {
+                    return ack({ success: false, message: 'Access denied — you are not a member of this group' });
+                }
+
+                await socket.join(groupId);
+                connectedUsers.joinRoom(socket.id, groupId);
+
+                socket.to(groupId).emit('member_online', {
+                    userId,
+                    name,
+                    groupId,
+                    timestamp: new Date().toISOString(),
+                });
+
+                const roomSize = io.sockets.adapter.rooms.get(groupId)?.size || 1;
+                console.log(`📥 [Socket] ${name} joined group room: ${groupId} | room size: ${roomSize}`);
+
+                ack({
+                    success: true,
+                    groupId,
+                    groupName: group.name,
+                    currentPhase: group.currentPhase,
+                    onlineCount: roomSize,
+                });
+            } catch (err) {
+                console.error(`[join_group_room] ${err.message}`);
+                ack({ success: false, message: 'Server error joining group room' });
+            }
+        });
+
+        // ── leave_group_room (alias for leave_party_room for consensus feature) ─
+        socket.on('leave_group_room', async ({ groupId } = {}, callback) => {
+            const ack = typeof callback === 'function' ? callback : () => {};
+            try {
+                if (!groupId) {
+                    return ack({ success: false, message: 'groupId is required' });
+                }
+
+                socket.leave(groupId);
+                connectedUsers.leaveRoom(socket.id, groupId);
+
+                socket.to(groupId).emit('member_offline', {
+                    userId,
+                    name,
+                    groupId,
+                    timestamp: new Date().toISOString(),
+                });
+
+                console.log(`📤 [Socket] ${name} left group room: ${groupId}`);
+                ack({ success: true, groupId });
+            } catch (err) {
+                console.error(`[leave_group_room] ${err.message}`);
+                ack({ success: false, message: 'Server error leaving group room' });
+            }
+        });
+
         // ── leave_party_room ──────────────────────────────────────────────────
         /**
          * Explicitly unsubscribes from a party room (without disconnecting).
