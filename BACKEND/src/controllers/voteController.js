@@ -50,12 +50,17 @@ const castVote = async (req, res) => {
             await group.save();
         }
 
-        // Compute updated vote counts to broadcast
+        // Compute updated vote counts to broadcast (O(n+m) via pre-built map)
         const allVotes = await Vote.find({ groupId });
-        const voteCounts = recommendation.topDestinations.map(td => {
-            const count = allVotes.filter(v => v.destinationId.equals(td.destination)).length;
-            return { destinationId: td.destination, count };
-        });
+        const countMap = {};
+        for (const v of allVotes) {
+            const key = v.destinationId.toString();
+            countMap[key] = (countMap[key] || 0) + 1;
+        }
+        const voteCounts = recommendation.topDestinations.map(td => ({
+            destinationId: td.destination,
+            count: countMap[td.destination.toString()] || 0,
+        }));
 
         const io = req.app.get('io');
         if (io) {

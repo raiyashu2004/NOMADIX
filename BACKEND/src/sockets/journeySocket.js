@@ -100,13 +100,14 @@ const setupJourneySocket = (io) => {
             }
         });
 
-        // ── join_group_room (alias for join_party_room for consensus feature) ──
+        // ── join_group_room ───────────────────────────────────────────────────
         /**
-         * Alias so the consensus feature can join rooms using groupId.
-         * Validates Group membership instead of Party membership.
+         * Group-specific room handler for the consensus feature.
+         * Validates Group membership (not Party) before admitting the socket.
          *
          * emit:  join_group_room  →  { groupId }
          * ack:   group_room_joined → { groupId, memberCount }
+         * err:   error            → { message }
          */
         socket.on('join_group_room', async ({ groupId } = {}, callback) => {
             const ack = typeof callback === 'function' ? callback : () => {};

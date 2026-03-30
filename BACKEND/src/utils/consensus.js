@@ -10,6 +10,7 @@
  * Find the most common value in an array (mode)
  */
 function mode(arr) {
+    if (!arr || !arr.length) return null;
     const freq = {};
     let maxFreq = 0;
     let result = arr[0];
@@ -44,9 +45,18 @@ function scoreDestination(destination, profile) {
     const matchedTags = [];
     let score = 0;
 
-    if (destination.tags.budget === profile.budget) { score++; matchedTags.push(`budget:${profile.budget}`); }
-    if (destination.tags.vibe === profile.vibe) { score++; matchedTags.push(`vibe:${profile.vibe}`); }
-    if (destination.tags.pace === profile.pace) { score++; matchedTags.push(`pace:${profile.pace}`); }
+    if (destination.tags.budget === profile.budget) {
+        score++;
+        matchedTags.push(`budget:${profile.budget}`);
+    }
+    if (destination.tags.vibe === profile.vibe) {
+        score++;
+        matchedTags.push(`vibe:${profile.vibe}`);
+    }
+    if (destination.tags.pace === profile.pace) {
+        score++;
+        matchedTags.push(`pace:${profile.pace}`);
+    }
 
     return { score, matchedTags };
 }
