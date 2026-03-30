@@ -1,152 +1,151 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { usePartyStore } from '../store/party'
-import { useAuthStore } from '../store/auth'
-import { useConsensusStore } from '../store/consensus'
-import type { Group } from '../store/party'
+import { useState } from "react"
+import { usePartyStore } from "../store/party"
+import { useAuthStore } from "../store/auth"
+
+type Vote = {
+  id: string
+  type: string
+  options: { id: string; label: string }[]
+}
 
 export default function Dashboard() {
-  const { currentGroup, myGroups, loading, error, createGroup, joinGroup, loadMyGroups, selectGroup } = usePartyStore()
+  const {
+    party,
+    createParty,
+    joinParty,
+    listVotes,
+    startJourney,
+    votes,
+    journey,
+  } = usePartyStore()
+
   const user = useAuthStore((s) => s.user)
-  const resetConsensus = useConsensusStore((s) => s.resetForGroup)
-  const navigate = useNavigate()
 
-  const [name, setName] = useState('')
-  const [inviteCode, setInviteCode] = useState('')
-  const [formError, setFormError] = useState('')
+  const [name, setName] = useState("")
+  const [joinId, setJoinId] = useState("")
+  const [inviteCode, setInviteCode] = useState("")
 
-  useEffect(() => {
-    if (user) loadMyGroups()
-  }, [user])
-
-  const createClick = async () => {
-    if (!name.trim()) return setFormError('Enter a group name')
-    setFormError('')
-    try {
-      await createGroup(name.trim())
-      setName('')
-    } catch (e: unknown) {
-      setFormError((e as Error).message)
-    }
+  const createClick = () => {
+    createParty(name || "My Trip")
+    listVotes()
   }
 
-  const joinClick = async () => {
-    if (!inviteCode.trim()) return setFormError('Enter an invite code')
-    setFormError('')
-    try {
-      await joinGroup(inviteCode.trim().toUpperCase())
-      setInviteCode('')
-    } catch (e: unknown) {
-      setFormError((e as Error).message)
-    }
+  const joinClick = () => {
+    joinParty(joinId || "demo-id", inviteCode || "1234")
+    listVotes()
   }
 
-  const handleSelectGroup = (group: Group) => {
-    selectGroup(group)
-    resetConsensus()
-  }
-
-  const goToConsensus = () => {
-    if (currentGroup) navigate('/consensus')
+  const startJourneyClick = () => {
+    if (party) startJourney()
   }
 
   return (
     <div className="min-h-screen p-6 space-y-8 bg-background">
 
-      {/* Create Group */}
+      {/* Create Party */}
       <div className="p-6 border shadow-sm bg-card border-border rounded-2xl">
         <div className="mb-4 text-lg font-semibold text-primary">
-          Welcome, {user?.name ?? 'Guest'} 👋
+          Welcome {user?.name ?? "Guest"}
         </div>
-
-        {(formError || error) && (
-          <div className="px-4 py-2 mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl">
-            {formError || error}
-          </div>
-        )}
 
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
             className="flex-1 p-3 transition border border-border rounded-xl bg-background text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
-            placeholder="Group name"
+            placeholder="Party name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && createClick()}
           />
+
           <button
-            className="px-5 py-3 text-white transition rounded-xl bg-primary hover:bg-primary-hover disabled:opacity-60"
+            className="px-5 py-3 text-white transition rounded-xl bg-primary hover:bg-primary-hover"
             onClick={createClick}
-            disabled={loading}
           >
-            {loading ? '…' : 'Create Group'}
+            Create Party
           </button>
         </div>
       </div>
 
-      {/* Join Group */}
+      {/* Join Party */}
       <div className="p-6 border shadow-sm bg-card border-border rounded-2xl">
-        <div className="mb-4 text-lg font-semibold text-primary">Join Group</div>
+        <div className="mb-4 text-lg font-semibold text-primary">
+          Join Party
+        </div>
+
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
-            className="flex-1 p-3 transition border border-border rounded-xl bg-background text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
-            placeholder="Invite Code (e.g. A1B2C3)"
-            value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-            onKeyDown={(e) => e.key === 'Enter' && joinClick()}
+            className="p-3 transition border border-border rounded-xl bg-background text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
+            placeholder="Party ID"
+            value={joinId}
+            onChange={(e) => setJoinId(e.target.value)}
           />
+
+          <input
+            className="p-3 transition border border-border rounded-xl bg-background text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/40"
+            placeholder="Invite Code"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
+          />
+
           <button
-            className="px-5 py-3 text-white transition rounded-xl bg-primary hover:bg-primary-hover disabled:opacity-60"
+            className="px-5 py-3 text-white transition rounded-xl bg-primary hover:bg-primary-hover"
             onClick={joinClick}
-            disabled={loading}
           >
-            {loading ? '…' : 'Join'}
+            Join
           </button>
         </div>
       </div>
 
-      {/* My Groups */}
-      {myGroups.length > 0 && (
-        <div className="p-6 border shadow-sm bg-card border-border rounded-2xl">
-          <div className="mb-4 text-lg font-semibold text-primary">My Groups</div>
-          <div className="space-y-2">
-            {myGroups.map((group) => (
-              <button
-                key={group._id}
-                onClick={() => handleSelectGroup(group)}
-                className={`w-full flex items-center justify-between p-4 border rounded-xl transition text-left ${
-                  currentGroup?._id === group._id
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border hover:bg-background'
-                }`}
+      {/* Party Details */}
+      {party && (
+        <div className="p-6 space-y-5 border shadow-sm bg-card border-border rounded-2xl">
+
+          <div className="text-xl font-semibold text-primary">
+            Party Details
+          </div>
+
+          <div className="space-y-1 text-text">
+            <div>ID: {party.id}</div>
+            <div>Name: {party.name}</div>
+            <div>Status: {party.status}</div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              className="px-5 py-3 text-white transition shadow-sm rounded-xl bg-accent hover:bg-accent-hover"
+              onClick={startJourneyClick}
+            >
+              Start Journey
+            </button>
+
+            <button
+              className="px-4 py-2 transition border border-border text-text rounded-xl hover:bg-background"
+              onClick={() => listVotes()}
+            >
+              Refresh Votes
+            </button>
+          </div>
+
+          {/* Votes */}
+          <div className="mt-4 space-y-3">
+            {votes.map((v: Vote) => (
+              <div
+                key={v.id}
+                className="p-4 border border-border rounded-xl bg-background"
               >
-                <div>
-                  <div className="font-medium text-text">{group.name}</div>
-                  <div className="text-sm text-muted">
-                    Phase: {group.currentPhase} · {group.members.length} member{group.members.length !== 1 ? 's' : ''} · Code: {group.inviteCode}
-                  </div>
+                <div className="font-medium text-text">
+                  Type: {v.type}
                 </div>
-                {currentGroup?._id === group._id && (
-                  <span className="text-xs px-2 py-1 bg-primary text-white rounded-lg">Selected</span>
-                )}
-              </button>
+                <div className="text-sm text-muted">
+                  Options: {v.options.length}
+                </div>
+              </div>
             ))}
           </div>
-        </div>
-      )}
 
-      {/* Selected Group Actions */}
-      {currentGroup && (
-        <div className="p-6 border shadow-sm bg-card border-border rounded-2xl">
-          <div className="mb-3 text-xl font-semibold text-primary">{currentGroup.name}</div>
-          <div className="text-sm text-muted mb-4">
-            Invite Code: <span className="font-mono font-bold text-text">{currentGroup.inviteCode}</span>
+          <div className="pt-2 text-sm text-muted">
+            Journey: {journey ? journey.status : "none"}
           </div>
-          <button
-            onClick={goToConsensus}
-            className="px-6 py-3 text-white font-medium transition rounded-xl bg-accent hover:opacity-90"
-          >
-            🗺️ Open Consensus Planner
-          </button>
+
         </div>
       )}
     </div>
