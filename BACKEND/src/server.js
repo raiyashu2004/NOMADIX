@@ -9,9 +9,6 @@ const setupJourneySocket = require('./sockets/journeySocket');
 // ── Load environment variables first ─────────────────────────────────────────
 dotenv.config();
 
-// ── Connect to MongoDB ────────────────────────────────────────────────────────
-connectDB();
-
 const PORT = process.env.PORT || 5000;
 
 // ── Create HTTP server from Express app ───────────────────────────────────────
@@ -56,11 +53,16 @@ app.set('io', io);
 // ── Register all socket event handlers ───────────────────────────────────────
 setupJourneySocket(io);
 
-// ── Start listening ───────────────────────────────────────────────────────────
-server.listen(PORT, () => {
-    console.log(`\n🚀  Server    : http://localhost:${PORT}`);
-    console.log(`⚡  WebSocket  : ws://localhost:${PORT}`);
-    console.log(`🌍  Mode      : ${process.env.NODE_ENV}\n`);
+// ── Connect to MongoDB, then start listening ──────────────────────────────────
+connectDB().then(() => {
+    server.listen(PORT, () => {
+        console.log(`\n🚀  Server    : http://localhost:${PORT}`);
+        console.log(`⚡  WebSocket  : ws://localhost:${PORT}`);
+        console.log(`🌍  Mode      : ${process.env.NODE_ENV}\n`);
+    });
+}).catch((err) => {
+    console.error('⛔  Failed to start server:', err);
+    process.exit(1);
 });
 
 // ── Graceful shutdown ─────────────────────────────────────────────────────────
