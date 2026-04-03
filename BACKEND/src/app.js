@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const billRoutes = require('./routes/billRoutes');
 const partyRoutes = require('./routes/partyRoutes');
+const consensusRoutes = require('./routes/consensusRoutes');
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/bills', billRoutes);
 app.use('/api/parties', partyRoutes);
+app.use('/api/groups/:groupId', consensusRoutes);
 
 // ─── ERROR HANDLING ───────────────────────────────────────────────────────────
 // 404 for unmatched routes
