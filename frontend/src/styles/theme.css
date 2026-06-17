@@ -1,0 +1,43 @@
+/* ===============================
+   LIGHT THEME
+================================= */
+
+:root {
+  /* Brand */
+  --color-primary: 79 70 229;        /* Indigo 600 */
+  --color-primary-hover: 67 56 202;   /* Indigo 700 */
+
+  --color-accent: 16 185 129;        /* Emerald 500 */
+  --color-accent-hover: 5 150 105;   /* Emerald 600 */
+
+  /* Surfaces */
+  --color-bg: 249 250 251;           /* Gray 50 */
+  --color-card: 255 255 255;         /* White */
+
+  /* Text */
+  --color-text: 17 24 39;            /* Gray 900 */
+  --color-muted: 107 114 128;        /* Gray 500 */
+
+  /* Border */
+  --color-border: 229 231 235;       /* Gray 200 */
+}
+
+/* ===============================
+   DARK THEME
+================================= */
+
+.dark {
+  --color-primary: 99 102 241;       /* Indigo 500 */
+  --color-primary-hover: 79 70 229;  /* Indigo 600 */
+
+  --color-accent: 52 211 153;        /* Emerald 400 */
+  --color-accent-hover: 16 185 129;  /* Emerald 500 */
+
+  --color-bg: 17 24 39;              /* Gray 900 */
+  --color-card: 31 41 55;            /* Gray 800 */
+
+  --color-text: 243 244 246;         /* Gray 100 */
+  --color-muted: 156 163 175;        /* Gray 400 */
+
+  --color-border: 55 65 81;          /* Gray 700 */
+}
