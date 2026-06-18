@@ -1,4 +1,6 @@
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet'
+
+// ... existing imports ...
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useEffect } from 'react'
@@ -30,6 +32,14 @@ function LocationSelector({ onSelect }: { onSelect: (lat: number, lng: number) =
   return null
 }
 
+function MapUpdater({ center }: { center: [number, number] }) {
+  const map = useMap()
+  useEffect(() => {
+    map.setView(center, map.getZoom(), { animate: true })
+  }, [center[0], center[1], map])
+  return null
+}
+
 export default function ItineraryMap({ items, onLocationSelect, selectingMode }: ItineraryMapProps) {
   const validItems = items.filter(item => item.lat !== undefined && item.lng !== undefined)
   
@@ -41,6 +51,7 @@ export default function ItineraryMap({ items, onLocationSelect, selectingMode }:
   return (
     <div className="w-full h-[400px] rounded-xl overflow-hidden border border-border relative z-0">
       <MapContainer center={center} zoom={12} scrollWheelZoom={false} className="w-full h-full">
+        <MapUpdater center={center} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

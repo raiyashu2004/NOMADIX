@@ -111,7 +111,10 @@ export const useConsensusStore = create<ConsensusStore>((set) => ({
     set({ loading: true, error: null })
     try {
       const res = await getRecommendationsApi(groupId)
-      set({ recommendations: res.data.data.topDestinations, loading: false })
+      set({ 
+        recommendations: res.data.data ? res.data.data.topDestinations : null, 
+        loading: false 
+      })
     } catch (err: unknown) {
       if ((err as { response?: { status?: number } })?.response?.status !== 404) {
         const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to load recommendations'

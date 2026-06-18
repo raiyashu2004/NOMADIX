@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { loginApi, registerApi, logoutApi } from '../api/auth'
+import { loginApi, registerApi, logoutApi, getMeApi } from '../api/auth'
 import { connectSocket, disconnectSocket } from '../socket'
 import { usePartyStore } from './party'
 import { useConsensusStore } from './consensus'
@@ -15,16 +15,19 @@ type User = {
 type AuthStore = {
   user: User | null
   loading: boolean
+  initialized: boolean
   error: string | null
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  checkAuth: () => Promise<void>
   setUser: (user: User | null) => void
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   loading: false,
+  initialized: false,
   error: null,
 
   login: async (email, password) => {
@@ -82,6 +85,26 @@ export const useAuthStore = create<AuthStore>((set) => ({
     // Itinerary and Memory stores might not have resetStore, let's just assume we reset what we can. Actually we should just let them unmount, but zustand stores are global.
     // It's safer to just set user to null.
     set({ user: null, error: null })
+  },
+
+  checkAuth: async () => {
+    const token = localStorage.getItem('accessToken')
+    if (!token) {
+      set({ initialized: true })
+      return
+    }
+    try {
+      const res = await getMeApi()
+      const user = res.data.data
+      connectSocket(token)
+      set({ user: { id: user._id, name: user.name, email: user.email } })
+    } catch (err) {
+      localStorage.removeItem('accessToken')
+      disconnectSocket()
+      set({ user: null })
+    } finally {
+      set({ initialized: true })
+    }
   },
 
   setUser: (user) => set({ user }),

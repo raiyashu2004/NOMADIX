@@ -22,14 +22,20 @@ function Protected({ children }: { children: ReactNode }) {
 export default function App() {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
+  const checkAuth = useAuthStore((s) => s.checkAuth)
+  const initialized = useAuthStore((s) => s.initialized)
   const { loadMyGroups, myGroups, currentGroup, selectGroup } = usePartyStore()
   const location = useLocation()
 
   useEffect(() => {
-    if (user) {
+    checkAuth()
+  }, [])
+
+  useEffect(() => {
+    if (user && initialized) {
       loadMyGroups()
     }
-  }, [user])
+  }, [user, initialized])
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken')
@@ -43,6 +49,14 @@ export default function App() {
     location.pathname === path
       ? 'bg-primary/10 text-primary'
       : 'text-muted hover:text-text hover:bg-background'
+
+  if (!initialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-xl font-semibold animate-pulse text-primary tracking-tight">NOMADIX</div>
+      </div>
+    )
+  }
 
   return (
     <div className='min-h-screen bg-background text-text'>
@@ -61,7 +75,10 @@ export default function App() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => document.documentElement.classList.toggle('dark')}
+            onClick={() => {
+              const isDark = document.documentElement.classList.toggle('dark')
+              localStorage.theme = isDark ? 'dark' : 'light'
+            }}
             className='p-2 transition border rounded-full border-border text-muted hover:bg-background hover:text-text'
             title="Toggle Theme"
           >
