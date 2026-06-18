@@ -162,21 +162,19 @@ export default function Party() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto bg-background/50 flex flex-col">
+      <div className="flex-1 overflow-y-auto bg-background flex flex-col">
         {activeTab === 'chat' ? (
-          <div className="flex-1 flex flex-col p-6 w-full h-full">
-            <div className="flex-1 min-h-0 bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">
-              <GroupChat />
-            </div>
+          <div className="flex-1 min-h-0 flex flex-col w-full h-full">
+            <GroupChat />
           </div>
         ) : (
-          <div className="p-6 md:p-8 w-full">
+          <div className="p-8 w-full">
             {activeTab === 'overview' && (
-              <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
-                <div className="space-y-8">
-                  <div className="p-6 border shadow-sm bg-card border-border rounded-2xl flex flex-col">
+              <div className="grid gap-12 lg:grid-cols-[2fr_1fr]">
+                <div className="space-y-12">
+                  <div className="flex flex-col">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-semibold text-primary">Interactive Map</h2>
+                      <h2 className="text-xl font-bold text-text">Interactive Map</h2>
                       <form onSubmit={handleMapSearch} className="flex items-center gap-2">
                         <input 
                           type="text" 
@@ -190,32 +188,32 @@ export default function Party() {
                         </button>
                       </form>
                     </div>
-                    <div className="flex-1 min-h-[400px]">
+                    <div className="w-full min-h-[500px] rounded-xl overflow-hidden shadow-sm border border-border">
                       <ErrorBoundary name="ItineraryMap">
                         <ItineraryMap items={mapItems} />
                       </ErrorBoundary>
                     </div>
                   </div>
                   
-                  <div className="p-6 border shadow-sm bg-card border-border rounded-2xl">
-                    <h2 className="mb-4 text-lg font-semibold text-primary">Itinerary</h2>
+                  <div>
+                    <h2 className="mb-6 text-xl font-bold text-text">Itinerary</h2>
                     <ItineraryTimeline />
                   </div>
                 </div>
 
-                <div className="space-y-8">
+                <div className="space-y-12">
                   <ErrorBoundary name="PartyMembers">
                     <PartyMembers />
                   </ErrorBoundary>
-                  <div className="p-6 border shadow-sm bg-card border-border rounded-2xl">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-semibold text-primary">Live Events</h2>
-                      <span className="text-xs text-muted">Auto updating</span>
+                  <div>
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-bold text-text">Live Events</h2>
+                      <span className="text-xs text-muted font-medium bg-accent/10 text-accent px-2 py-1 rounded-full">Auto updating</span>
                     </div>
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                       {events.length === 0 ? <li className="text-sm text-muted">Waiting for events...</li> : events.map((event, index) => (
-                        <li key={index} className="flex items-center justify-between p-3 text-sm border bg-background border-border rounded-xl">
-                          <span className="text-text max-w-[200px] truncate" title={event.type}>
+                        <li key={index} className="flex items-center justify-between p-4 text-sm border-b border-border">
+                          <span className="text-text font-medium truncate pr-4" title={event.type}>
                             {event.type === 'itineraryUpdated' && event.payload 
                               ? (event.payload as any).action === 'add' 
                                 ? `${(event.payload as any).item?.addedBy?.name || 'Someone'} added "${(event.payload as any).item?.title || 'an item'}"` 
@@ -225,7 +223,7 @@ export default function Party() {
                               : event.type.replace(/([A-Z])/g, ' $1').trim()
                             }
                           </span>
-                          <span className="text-xs text-muted shrink-0 ml-2">just now</span>
+                          <span className="text-xs text-muted shrink-0">just now</span>
                         </li>
                       ))}
                     </ul>
@@ -235,16 +233,16 @@ export default function Party() {
             )}
 
             {activeTab === 'expenses' && (
-              <div className="p-6 border shadow-sm bg-card border-border rounded-2xl">
-                <h2 className="mb-4 text-lg font-semibold text-primary">Expense Split</h2>
+              <div className="flex flex-col w-full h-full">
+                <h2 className="mb-8 text-2xl font-bold text-text">Expense Split</h2>
                 <BillSplit />
               </div>
             )}
 
             {activeTab === 'gallery' && (
-              <div className="p-6 border shadow-sm bg-card border-border rounded-2xl">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-primary">Trip Gallery</h2>
+              <div className="flex flex-col w-full h-full">
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-2xl font-bold text-text">Trip Gallery</h2>
                   <span className="text-sm text-muted">Shared Memories</span>
                 </div>
                 <ErrorBoundary name="SharedGallery">

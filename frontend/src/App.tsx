@@ -99,15 +99,13 @@ export default function App() {
       </nav>
 
       {/* Pages */}
-      <div className='max-w-6xl mx-auto'>
-        <Routes>
-          <Route path='/' element={<Protected><Dashboard /></Protected>} />
-          <Route path='/party' element={<Protected><ErrorBoundary name="Party Route"><Party /></ErrorBoundary></Protected>} />
-          <Route path='/consensus' element={<Protected><Consensus /></Protected>} />
-          <Route path='/login' element={<Login />} />
-          <Route path='/register' element={<Register />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route path='/' element={<Protected><div className="max-w-6xl mx-auto w-full"><Dashboard /></div></Protected>} />
+        <Route path='/party' element={<Protected><ErrorBoundary name="Party Route"><Party /></ErrorBoundary></Protected>} />
+        <Route path='/consensus' element={<Protected><div className="max-w-6xl mx-auto w-full"><Consensus /></div></Protected>} />
+        <Route path='/login' element={<Login />} />
+        <Route path='/register' element={<Register />} />
+      </Routes>
     </div>
   )
 }
