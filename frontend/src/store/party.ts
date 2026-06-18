@@ -11,7 +11,8 @@ export type GroupMember = {
 export type Group = {
   _id: string
   name: string
-  leader: GroupMember | string
+  owner: GroupMember | string
+  admins: GroupMember[]
   members: GroupMember[]
   inviteCode: string
   currentPhase: 'planning' | 'survey' | 'recommendations' | 'voting' | 'locked'

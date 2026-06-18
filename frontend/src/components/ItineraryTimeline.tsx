@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { useItineraryStore } from "../store/itinerary"
 import { usePartyStore } from "../store/party"
 import { useAuthStore } from "../store/auth"
+import { canManageItinerary } from "../utils/roles"
 
 export default function ItineraryTimeline() {
   const { currentGroup } = usePartyStore()
@@ -96,7 +97,7 @@ export default function ItineraryTimeline() {
                   <div className="flex-1 pb-2">
                     <div className="flex items-center justify-between">
                       <div className="text-sm font-semibold text-text">{it.title}</div>
-                      {(it.addedBy._id === user?.id || isLeader(currentGroup, user)) && (
+                      {(it.addedBy._id === user?.id || canManageItinerary(currentGroup, user?.id)) && (
                         <button 
                           type="button"
                           onClick={() => deleteItem(it._id).then(() => loadItinerary(currentGroup._id))}
@@ -117,11 +118,4 @@ export default function ItineraryTimeline() {
       </div>
     </div>
   )
-}
-
-function isLeader(group: any, user: any) {
-  if (!group || !user) return false
-  return typeof group.leader === 'string'
-    ? group.leader === user.id
-    : group.leader?._id === user.id
 }

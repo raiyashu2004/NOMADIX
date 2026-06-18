@@ -25,7 +25,8 @@ const createGroup = async (req, res) => {
         const group = await Group.create({
             name: name.trim(),
             description: description?.trim(),
-            leader: req.user._id,
+            owner: req.user._id,
+            admins: [],
             members: [req.user._id],
             inviteCode,
         });
@@ -70,7 +71,8 @@ const joinGroup = async (req, res) => {
         await group.save();
 
         const populated = await group.populate([
-            { path: 'leader', select: 'name email' },
+            { path: 'owner', select: 'name email' },
+            { path: 'admins', select: 'name email' },
             { path: 'members', select: 'name email' },
         ]);
 
@@ -93,7 +95,8 @@ const joinGroup = async (req, res) => {
 const getMyGroups = async (req, res) => {
     try {
         const groups = await Group.find({ members: req.user._id })
-            .populate('leader', 'name email')
+            .populate('owner', 'name email')
+            .populate('admins', 'name email')
             .populate('members', 'name email')
             .sort({ createdAt: -1 });
 
@@ -115,7 +118,8 @@ const getMyGroups = async (req, res) => {
 const getGroupDetails = async (req, res) => {
     try {
         const group = await Group.findById(req.params.id)
-            .populate('leader', 'name email')
+            .populate('owner', 'name email')
+            .populate('admins', 'name email')
             .populate('members', 'name email');
 
         if (!group) {
@@ -150,10 +154,13 @@ const startJourney = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Group not found' });
         }
 
-        if (!group.leader.equals(req.user._id)) {
+        const isOwner = group.owner.equals(req.user._id);
+        const isAdmin = group.admins.some(adminId => adminId.equals(req.user._id));
+
+        if (!isOwner && !isAdmin) {
             return res.status(403).json({
                 success: false,
-                message: 'Only the group leader can start the journey',
+                message: 'Only the owner or admins can start the journey',
             });
         }
 
@@ -207,10 +214,13 @@ const updateLocation = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Group not found' });
         }
 
-        if (!group.leader.equals(req.user._id)) {
+        const isOwner = group.owner.equals(req.user._id);
+        const isAdmin = group.admins.some(adminId => adminId.equals(req.user._id));
+
+        if (!isOwner && !isAdmin) {
             return res.status(403).json({
                 success: false,
-                message: 'Only the group leader can update the location',
+                message: 'Only the owner or admins can update the location',
             });
         }
 
@@ -255,16 +265,27 @@ const removeMember = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Group not found' });
         }
 
-        if (!group.leader.equals(req.user._id)) {
-            return res.status(403).json({ success: false, message: 'Only the leader can remove members' });
+        const isOwner = group.owner.equals(req.user._id);
+        const isAdmin = group.admins.some(adminId => adminId.equals(req.user._id));
+
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ success: false, message: 'Only the owner or admins can remove members' });
         }
 
-        if (group.leader.equals(req.params.memberId)) {
-            return res.status(400).json({ success: false, message: 'Leader cannot be removed from the group' });
+        const targetIsOwner = group.owner.equals(req.params.memberId);
+        const targetIsAdmin = group.admins.some(adminId => adminId.equals(req.params.memberId));
+
+        if (targetIsOwner) {
+            return res.status(400).json({ success: false, message: 'Owner cannot be removed' });
+        }
+
+        if (isAdmin && targetIsAdmin && !isOwner) {
+            return res.status(403).json({ success: false, message: 'Admins cannot remove other admins' });
         }
 
         const before = group.members.length;
         group.members = group.members.filter((m) => !m.equals(req.params.memberId));
+        group.admins = group.admins.filter((a) => !a.equals(req.params.memberId));
 
         if (group.members.length === before) {
             return res.status(404).json({ success: false, message: 'Member not found in this group' });
@@ -279,6 +300,116 @@ const removeMember = async (req, res) => {
     }
 };
 
+const promoteToAdmin = async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id);
+        if (!group) return res.status(404).json({ success: false, message: 'Group not found' });
+        
+        if (!group.owner.equals(req.user._id)) {
+            return res.status(403).json({ success: false, message: 'Only the owner can manage admins' });
+        }
+
+        const memberId = req.params.memberId;
+        if (!group.members.some(m => m.equals(memberId))) {
+            return res.status(400).json({ success: false, message: 'User is not a member' });
+        }
+        if (group.owner.equals(memberId)) {
+            return res.status(400).json({ success: false, message: 'Owner cannot be an admin' });
+        }
+        if (group.admins.some(a => a.equals(memberId))) {
+            return res.status(400).json({ success: false, message: 'User is already an admin' });
+        }
+        if (group.admins.length >= 2) {
+            return res.status(400).json({ success: false, message: 'A party can have up to 2 Admins' });
+        }
+
+        group.admins.push(memberId);
+        await group.save();
+        return res.status(200).json({ success: true, message: 'Member promoted to admin' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const demoteAdmin = async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id);
+        if (!group) return res.status(404).json({ success: false, message: 'Group not found' });
+
+        if (!group.owner.equals(req.user._id)) {
+            return res.status(403).json({ success: false, message: 'Only the owner can manage admins' });
+        }
+
+        const memberId = req.params.memberId;
+        if (!group.admins.some(a => a.equals(memberId))) {
+            return res.status(400).json({ success: false, message: 'User is not an admin' });
+        }
+
+        group.admins = group.admins.filter(a => !a.equals(memberId));
+        await group.save();
+        return res.status(200).json({ success: true, message: 'Admin demoted to member' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const transferOwnership = async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id);
+        if (!group) return res.status(404).json({ success: false, message: 'Group not found' });
+
+        if (!group.owner.equals(req.user._id)) {
+            return res.status(403).json({ success: false, message: 'Only the owner can transfer ownership' });
+        }
+
+        const { newOwnerId } = req.body;
+        if (!newOwnerId || !group.members.some(m => m.equals(newOwnerId))) {
+            return res.status(400).json({ success: false, message: 'New owner must be an existing member' });
+        }
+
+        group.owner = newOwnerId;
+        group.admins = group.admins.filter(a => !a.equals(newOwnerId));
+        await group.save();
+        return res.status(200).json({ success: true, message: 'Ownership transferred successfully' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const leaveGroup = async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id);
+        if (!group) return res.status(404).json({ success: false, message: 'Group not found' });
+
+        if (group.owner.equals(req.user._id)) {
+            return res.status(400).json({ success: false, message: 'Owner must transfer ownership before leaving' });
+        }
+
+        group.members = group.members.filter(m => !m.equals(req.user._id));
+        group.admins = group.admins.filter(a => !a.equals(req.user._id));
+        await group.save();
+        return res.status(200).json({ success: true, message: 'Left the party successfully' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const deleteGroup = async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id);
+        if (!group) return res.status(404).json({ success: false, message: 'Group not found' });
+
+        if (!group.owner.equals(req.user._id)) {
+            return res.status(403).json({ success: false, message: 'Only the owner can delete the party' });
+        }
+
+        await Group.deleteOne({ _id: req.params.id });
+        return res.status(200).json({ success: true, message: 'Party deleted successfully' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     createGroup,
     joinGroup,
@@ -287,4 +418,9 @@ module.exports = {
     startJourney,
     updateLocation,
     removeMember,
+    promoteToAdmin,
+    demoteAdmin,
+    transferOwnership,
+    leaveGroup,
+    deleteGroup,
 };

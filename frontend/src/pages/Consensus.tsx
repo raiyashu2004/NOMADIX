@@ -89,9 +89,9 @@ export default function Consensus() {
 
   if (!currentGroup) return null
 
-  const isLeader = typeof currentGroup.leader === 'string'
-    ? currentGroup.leader === user?.id
-    : (currentGroup.leader as { _id: string })?._id === user?.id
+  const isOwner = typeof currentGroup.owner === 'string'
+    ? currentGroup.owner === user?.id
+    : (currentGroup.owner as { _id: string })?._id === user?.id
 
   const hasResponded = surveyStatus?.respondents.some(r => r.userId === user?.id)
 
@@ -297,7 +297,7 @@ export default function Consensus() {
                 </div>
               )}
 
-              {isLeader && surveyStatus.respondents.length > 0 && !recommendations && (
+              {isOwner && surveyStatus.respondents.length > 0 && !recommendations && (
                 <button
                   onClick={handleGenerateRecs}
                   disabled={loading}
@@ -378,9 +378,9 @@ export default function Consensus() {
               <div className="text-4xl mb-3">🔮</div>
               <p className="text-text font-medium">Recommendations not generated yet</p>
               <p className="text-sm text-muted mt-1">
-                {isLeader
+                {isOwner
                   ? 'Go to Survey tab to generate recommendations once members have responded.'
-                  : 'Waiting for the group leader to generate recommendations.'}
+                  : 'Waiting for the group owner to generate recommendations.'}
               </p>
             </div>
           )}

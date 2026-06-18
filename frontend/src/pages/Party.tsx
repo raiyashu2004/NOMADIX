@@ -11,6 +11,7 @@ import BillSplit from "../components/BillSplit"
 import GroupChat from "../components/GroupChat"
 import SharedGallery from "../components/SharedGallery"
 import ItineraryMap from "../components/ItineraryMap"
+import PartyMembers from "../components/PartyMembers"
 import { ErrorBoundary } from "../components/ErrorBoundary"
 
 type EventType = "userJoined" | "voteUpdated" | "journeyStarted" | "itineraryUpdated" | "newMessage"
@@ -138,6 +139,10 @@ export default function Party() {
 
           {/* Right Sidebar Area */}
           <div className="space-y-8">
+            <ErrorBoundary name="PartyMembers">
+              <PartyMembers />
+            </ErrorBoundary>
+
             <div className="p-6 border shadow-sm bg-card border-border rounded-2xl">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-primary">Group Chat</h2>

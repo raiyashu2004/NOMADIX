@@ -68,21 +68,21 @@ const uploadMemory = async (req, res) => {
 
 /**
  * DELETE /api/memories/:memoryId
- * Delete a memory (only the uploader or group leader can delete)
+ * Delete a memory (only the uploader or group owner can delete)
  */
 const deleteMemory = async (req, res) => {
     try {
-        const { memoryId } = req.params;
-        const userId = req.user._id;
+        const memory = await Memory.findById(req.params.id).populate('groupId');
 
-        const memory = await Memory.findById(memoryId).populate('groupId');
-        if (!memory) return res.status(404).json({ success: false, message: 'Memory not found' });
+        if (!memory) {
+            return res.status(404).json({ success: false, message: 'Memory not found' });
+        }
 
-        const group = memory.groupId;
-        const isUploader = memory.uploadedBy.equals(userId);
-        const isLeader = group.leader.equals(userId);
+        const isUploader = memory.uploadedBy.equals(req.user._id);
+        const isOwner = memory.groupId && memory.groupId.owner && memory.groupId.owner.equals(req.user._id);
+        const isAdmin = memory.groupId && memory.groupId.admins && memory.groupId.admins.some(adminId => adminId.equals(req.user._id));
 
-        if (!isUploader && !isLeader) {
+        if (!isUploader && !isOwner && !isAdmin) {
             return res.status(403).json({ success: false, message: 'Not authorized to delete this memory' });
         }
 
@@ -99,7 +99,7 @@ const deleteMemory = async (req, res) => {
 
         await memory.deleteOne();
 
-        res.status(200).json({ success: true, data: memoryId });
+        res.status(200).json({ success: true, data: req.params.id });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

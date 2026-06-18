@@ -18,8 +18,8 @@ const generateRecommendations = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Group not found' });
         }
 
-        if (!group.leader.equals(userId)) {
-            return res.status(403).json({ success: false, message: 'Only the group leader can generate recommendations' });
+        if (!group.owner.equals(userId)) {
+            return res.status(403).json({ success: false, message: 'Only the group owner can generate recommendations' });
         }
 
         const surveyResponses = await SurveyResponse.find({ groupId });
@@ -86,7 +86,7 @@ const getRecommendations = async (req, res) => {
             .populate('topDestinations.destination');
 
         if (!recommendation) {
-            return res.status(404).json({ success: false, message: 'Recommendations have not been generated yet' });
+            return res.status(200).json({ success: true, data: null });
         }
 
         res.status(200).json({ success: true, data: recommendation });

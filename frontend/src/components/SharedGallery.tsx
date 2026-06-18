@@ -40,9 +40,9 @@ export default function SharedGallery() {
 
   if (!currentGroup) return null
 
-  const isLeader = typeof currentGroup.leader === 'string'
-    ? currentGroup.leader === user?.id
-    : (currentGroup.leader as { _id: string })?._id === user?.id
+  const isOwner = typeof currentGroup.owner === 'string'
+    ? currentGroup.owner === user?.id
+    : (currentGroup.owner as { _id: string })?._id === user?.id
 
   return (
     <div className="space-y-6">
@@ -95,7 +95,7 @@ export default function SharedGallery() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {memories.map(memory => {
-            const canDelete = isLeader || memory.uploadedBy._id === user?.id
+            const canDelete = isOwner || memory.uploadedBy._id === user?.id
             
             // Construct the full URL for the image
             const API_URL = import.meta.env.VITE_API_URL || ''
