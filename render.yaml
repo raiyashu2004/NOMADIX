@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: nomadix-backend
+    env: node
+    region: ohio
+    rootDir: BACKEND
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_ORIGIN
+        fromService:
+          type: web
+          name: nomadix-frontend
+          envVarKey: RENDER_EXTERNAL_URL
+
+  - type: web
+    name: nomadix-frontend
+    env: static
+    region: ohio
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: nomadix-backend
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_SOCKET_URL
+        fromService:
+          type: web
+          name: nomadix-backend
+          envVarKey: RENDER_EXTERNAL_URL
